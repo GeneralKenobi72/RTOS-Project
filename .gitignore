@@ -1,0 +1,11 @@
+*.ko
+*.mod
+*.moc.c;
+*.mod.o
+*.o
+*.out
+*.order
+*.symvers
+/**/bin/
+/**/obj/
+*.cache
