@@ -1,11 +1,12 @@
 *.ko
+*.mod*
 *.mod
-*.moc.c;
-*.mod.o
+*.mod
 *.o
 *.out
 *.order
+*.cmd
 *.symvers
 /**/bin/
 /**/obj/
-*.cache
+*cache
