@@ -22,10 +22,6 @@ MODULE_AUTHOR("Luka Zeljko");
    SW0 reading after each interval */
 #define TEST
 
-// timer interval defined as (TIMER_SEC + TIMER_NANO_SEC)
-#define TIMER_SEC    0
-#define TIMER_NANO_SEC  250*1000*1000 /* 250ms */
-
 // NOTE: Check Broadcom BCM8325 datasheet, page 91+
 // NOTE: GPIO Base address is set to 0x7E200000,
 //       but it is VC CPU BUS address, while the
@@ -175,6 +171,11 @@ MODULE_PARM_DESC(T1, "Time of led on");
 
 module_param(T0, int, S_IRUSR | S_IWUSR);
 MODULE_PARM_DESC(T0, "Time of led off");
+
+// timer intervals defined as (TIMER_SEC + TIMER_NANO_SEC)
+#define TIMER_SEC    0
+#define TIMER_NANO_SEC_LED_ON  T1*1000*1000 /* 250ms */
+#define TIMER_NANO_SEC_LED_OFF  T0*250*1000*1000 /* 250ms */
 
 /* Major number. */
 int gpio_driver_major;
@@ -404,42 +405,32 @@ char GetGpioPinValue(char pin)
 }
 
 /* timer callback function called each time the timer expires
-   flashes the LED0, reads the SW0 and prints its value to kernel log */
+   flashes the LED */
 static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
 {
 #ifdef TEST
-    static char power = 0x0;
-    static char gpio_12_val;
-    static char gpio_16_val;
-    static char gpio_20_val;
-    static char gpio_21_val;
 
-    power ^= 0x1;
-
-    gpio_12_val = GetGpioPinValue(GPIO_12);
-    gpio_16_val = GetGpioPinValue(GPIO_16);
-    gpio_20_val = GetGpioPinValue(GPIO_20);
-    gpio_21_val = GetGpioPinValue(GPIO_21);
-
-	//if(!state_of_leds[0])
-		//ClearGpioPin(GPIO_06);
-	//else
-		//SetGpioPin(GPIO_06);
-
-	//if(!state_of_leds[1])
-		//ClearGpioPin(GPIO_13);
-	//else
-		//SetGpioPin(GPIO_13);
-
-	//if(!state_of_leds[2])
-		//ClearGpioPin(GPIO_19);
-	//else
-		//SetGpioPin(GPIO_19);
-
-	//if(!state_of_leds[3])
-		//ClearGpioPin(GPIO_26);
-	//else
-		//SetGpioPin(GPIO_26);
+	/* TODO: Add led on/off logic here */
+	static char power = 0x0;
+	power ^= 0x1;
+    if (power) {
+		if(led_modes[0] == 2)
+    		SetGpioPin(GPIO_06);
+		else if(led_modes[1] == 2)
+    		SetGpioPin(GPIO_13);
+		else if(led_modes[2] == 2)
+    		SetGpioPin(GPIO_19);
+    	kt = ktime_set(TIMER_SEC, TIMER_NANO_SEC_LED_OFF);
+    }
+    else {
+		if(led_modes[0] == 2)
+    		ClearGpioPin(GPIO_06);
+		else if(led_modes[1] == 2)
+    		ClearGpioPin(GPIO_13);
+		else if(led_modes[2] == 2)
+    		ClearGpioPin(GPIO_19);
+    	kt = ktime_set(TIMER_SEC, TIMER_NANO_SEC_LED_ON);
+    }
 
 #endif
 
