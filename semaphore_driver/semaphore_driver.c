@@ -1,5 +1,6 @@
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -15,6 +16,7 @@
 #include <asm/uaccess.h>
 
 MODULE_LICENSE("Dual BSD/GPL");
+MODULE_AUTHOR("Luka Zeljko");
 
 /* if defined, timer callback will implement LED0 flashing and
    SW0 reading after each interval */
@@ -165,6 +167,14 @@ module_exit(gpio_driver_exit);
 
 /* Global variables of the driver */
 int state_of_leds[4] = {0, 0, 0, 0};
+static int T1 = 250;
+static int T0 = 250;
+
+module_param(T1, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+MODULE_PARM_DESC(len_on_ms, "Time of led on");
+
+module_param(T0, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+MODULE_PARM_DESC(len_on_ms, "Time of led off");
 
 /* Major number. */
 int gpio_driver_major;
@@ -659,6 +669,7 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
     }
     else
     {
-        /* TODO: use gpio_driver_buffer here. */
+		printk(KENR_INFO "%c %c", gpio_driver_buffer[0], gpio_driver_buffer[1]);
+		return len;
     }
 }
