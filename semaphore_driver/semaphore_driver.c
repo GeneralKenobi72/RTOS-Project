@@ -170,11 +170,11 @@ int state_of_leds[4] = {0, 0, 0, 0};
 static int T1 = 250;
 static int T0 = 250;
 
-module_param(T1, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-MODULE_PARM_DESC(len_on_ms, "Time of led on");
+module_param(T1, int, S_IRUSR | S_IWUSR);
+MODULE_PARM_DESC(T1, "Time of led on");
 
-module_param(T0, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-MODULE_PARM_DESC(len_on_ms, "Time of led off");
+module_param(T0, int, S_IRUSR | S_IWUSR);
+MODULE_PARM_DESC(T0, "Time of led off");
 
 /* Major number. */
 int gpio_driver_major;
@@ -441,10 +441,6 @@ static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
 	//else
 		//SetGpioPin(GPIO_26);
 
-    printk(KERN_INFO "gpio_driver: gpio16 value: %d\n", gpio_16_val);
-    printk(KERN_INFO "gpio_driver: gpio12 value: %d\n", gpio_12_val);
-    printk(KERN_INFO "gpio_driver: gpio20 value: %d\n", gpio_20_val);
-    printk(KERN_INFO "gpio_driver: gpio21 value: %d\n", gpio_21_val);
 #endif
 
     hrtimer_forward(&blink_timer, ktime_get(), kt);
@@ -477,6 +473,8 @@ int gpio_driver_init(void)
 
     gpio_driver_major = result;
     printk(KERN_INFO "gpio_driver major number is %d\n", gpio_driver_major);
+	printk(KERN_INFO "Led on time is: %d\n", T1);
+	printk(KERN_INFO "Led off time is: %d\n", T0);
 
     /* Allocating memory for the buffer. */
     gpio_driver_buffer = kmalloc(BUF_LEN, GFP_KERNEL);
@@ -502,7 +500,6 @@ int gpio_driver_init(void)
     SetGpioPinDirection(GPIO_06, GPIO_DIRECTION_OUT);
     SetGpioPinDirection(GPIO_13, GPIO_DIRECTION_OUT);
     SetGpioPinDirection(GPIO_19, GPIO_DIRECTION_OUT);
-    SetGpioPinDirection(GPIO_26, GPIO_DIRECTION_OUT);
 
     /* SWitches */
     SetInternalPullUpDown(GPIO_12, PULL_UP);
@@ -656,9 +653,6 @@ static ssize_t gpio_driver_read(struct file *filp, char *buf, size_t len, loff_t
  */
 static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len, loff_t *f_pos)
 {
-	int index;
-	int state;
-	printk(KERN_INFO "USAO");
     /* Reset memory. */
     memset(gpio_driver_buffer, 0, BUF_LEN);
 
@@ -669,7 +663,30 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
     }
     else
     {
-		printk(KENR_INFO "%c %c", gpio_driver_buffer[0], gpio_driver_buffer[1]);
+		if(gpio_driver_buffer[0] == 'R') {
+			if(gpio_driver_buffer[1] == '0')
+				ClearGpioPin(GPIO_06);
+			else if(gpio_driver_buffer[1] == '1')
+				SetGpioPin(GPIO_06);
+			/* TODO: if second char is 2 */
+			return len;
+		} else if(gpio_driver_buffer[0] == 'G') {
+			if(gpio_driver_buffer[1] == '0')
+				ClearGpioPin(GPIO_13);
+			else if(gpio_driver_buffer[1] == '1')
+				SetGpioPin(GPIO_13);
+			/* TODO: if second char is 2 */
+			return len;
+		} else if(gpio_driver_buffer[0] == 'Y') {
+			if(gpio_driver_buffer[1] == '0')
+				ClearGpioPin(GPIO_19);
+			else if(gpio_driver_buffer[1] == '1')
+				SetGpioPin(GPIO_19);
+			/* TODO: if second char is 2 */
+			return len;
+		}
+
+		printk(KERN_INFO "%c %c", gpio_driver_buffer[0], gpio_driver_buffer[1]);
 		return len;
     }
 }
