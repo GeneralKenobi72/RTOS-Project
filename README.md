@@ -1,31 +1,32 @@
-# LEDs example driver for Raspberry PI
+# LEDs Example Driver for Raspberry Pi
 
-Collage project for Real Time Operating Systems class.
-It consists of driver for LEDs and a test app, using the given driver.
+A collage project developed for the Real-Time Operating Systems class, this project contains a driver for LEDs and a test app utilizing the provided driver.
 
 ## The Driver
 
-Writing command brings one of three LEDs to one of three states: on, off, blinking.
+When a command is written, one of the three LEDs transitions to one of three states: on, off, or blinking.
+
+For example:
 
 ```
 echo "R1" > /dev/sem_driver
 ```
 
-brings Red LE diode to _on_ state. 2 Other diodes are G(Green), and Y(Yellow).
+This command brings the Red LE diode to the _on_ state. The other diodes are denoted as G (Green) and Y (Yellow).
 
-States: 0 - _off_, 1 - _on_, 2 - _blinking_. LED blinking has 2 paramteres(T0 - _off time_, T1 - _on time_, both of type int, in milliseconds) that are passed to driver upon installing it, both default values are set to 250.
+States: 0 - _off_, 1 - _on_, 2 - _blinking_. LED blinking has 2 paramteres(T0 - _off time_, T1 - _on time_) both of type int, in milliseconds. These paramteres are passed to the driver during installation, with default values set to 250.
 
-Driver also handles one push-button in a way that counts how many times the button is pressed. The counting stops when the counter reaches a maximum number, M (maximum number of presses). The value of M is also passed as a parameter during controller installation, with a default value of 15.
+Driver also manages a push-button, counting the number of times it is pressed. The counting stops when the counter reaches a maximum number, M (maximum number of presses). The value of M is also passed as a parameter during controller installation, with a default value of 15.
+
+To reset the push-button counter:
 
 ```
 echo "C" > /dev/sem_driver
 ```
 
-Sets push-button counter back to 0.
-
 ## Semaphore test app
 
-User space test app uses read and write commands, simulating a semaphore with following states:
+The user-space test app utilizes read and write commands, simulating a semaphore with the following states:
 
 1. Green on, others off. Duration - Ts1
 2. Green blinking, others off. Duration - Ts2
@@ -33,8 +34,8 @@ User space test app uses read and write commands, simulating a semaphore with fo
 4. Red on, others off. Duration - Ts4
 5. Yellow and red on, green off. Duration - Ts5
 
-After 5th state, repeat.
+After 5th state, the sequence repeats.
 
-States are changing like this unless, during the green light on(1. state), the push-button is pressed M times. In that case, state automatically changes to green blinking state, and sequence continues normally. Button presses have no effect unless the green light is on.
+States change like this unless, during the green light on (1. state), the push-button is pressed M times. In that case, state automatically changes to green blinking state, and sequence continues normally. Button presses have no effect unless the green light is on.
 
 Test app accepts parameters(Ts1, ..., Ts5) during startup.
