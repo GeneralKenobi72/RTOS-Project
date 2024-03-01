@@ -684,26 +684,38 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
     else
     {
 		if(gpio_driver_buffer[0] == 'R') {
-			if(gpio_driver_buffer[1] == '0')
+			if(gpio_driver_buffer[1] == '0') {
+				led_modes[0] = 0;
 				ClearGpioPin(GPIO_06);
-			else if(gpio_driver_buffer[1] == '1')
+			}
+			else if(gpio_driver_buffer[1] == '1') {
+				led_modes[0] = 1;
 				SetGpioPin(GPIO_06);
+			}
 			else if(gpio_driver_buffer[1] == '2')
 				led_modes[0] = 2;
 			return len;
-		} else if(gpio_driver_buffer[0] == 'G') {
-			if(gpio_driver_buffer[1] == '0')
+		} else if(gpio_driver_buffer[0] == 'Y') {
+			if(gpio_driver_buffer[1] == '0') {
+				led_modes[1] = 0;
 				ClearGpioPin(GPIO_13);
-			else if(gpio_driver_buffer[1] == '1')
+			}
+			else if(gpio_driver_buffer[1] == '1') {
+				led_modes[1] = 1;
 				SetGpioPin(GPIO_13);
+			}
 			else if(gpio_driver_buffer[1] == '2')
 				led_modes[1] = 2;
 			return len;
-		} else if(gpio_driver_buffer[0] == 'Y') {
-			if(gpio_driver_buffer[1] == '0')
+		} else if(gpio_driver_buffer[0] == 'G') {
+			if(gpio_driver_buffer[1] == '0') {
+				led_modes[2] = 0;
 				ClearGpioPin(GPIO_19);
-			else if(gpio_driver_buffer[1] == '1')
+			}
+			else if(gpio_driver_buffer[1] == '1') {
+				led_modes[2] = 1;
 				SetGpioPin(GPIO_19);
+			}
 			else if(gpio_driver_buffer[1] == '2')
 				led_modes[2] = 2;
 			return len;
