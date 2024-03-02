@@ -18,10 +18,6 @@
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Luka Zeljko");
 
-/* if defined, timer callback will implement LED0 flashing and
-   SW0 reading after each interval */
-#define TEST
-
 // NOTE: Check Broadcom BCM8325 datasheet, page 91+
 // NOTE: GPIO Base address is set to 0x7E200000,
 //       but it is VC CPU BUS address, while the
@@ -165,9 +161,8 @@ module_exit(gpio_driver_exit);
 int led_modes[3] = {0, 0, 0};
 static int T1 = 250;
 static int T0 = 250;
-static int M = 10;
+static int M = 15;
 int N = 0;
-int button_state = 1;
 
 module_param(T1, int, S_IRUSR | S_IWUSR);
 MODULE_PARM_DESC(T1, "Time of led on");
@@ -182,7 +177,7 @@ MODULE_PARM_DESC(M, "Numbers of times push button can be pressed");
 #define TIMER_SEC    0
 #define TIMER_NANO_SEC_LED_ON  T1*1000*1000
 #define TIMER_NANO_SEC_LED_OFF  T0*1000*1000
-#define TIMER_NANO_SEC_BUTTON_CHECK 100*1000*1000
+#define TIMER_NANO_SEC_BUTTON_CHECK 10*1000*1000
 
 /* Major number. */
 int gpio_driver_major;
@@ -417,20 +412,19 @@ char GetGpioPinValue(char pin)
    checks button sate */
 static enum hrtimer_restart button_check_timer_callback(struct hrtimer *param)
 {
-#ifdef TEST
-
 	/* TODO: Add button checker logic here */
+	static int button_changed = 0;
 	static char gpio_12_val;
 	gpio_12_val = GetGpioPinValue(GPIO_12);
-	if(gpio_12_val != button_state && M != 0) {
+	if(gpio_12_val == 0) {
+		button_changed = 1;
+	}
+	else if(gpio_12_val == 1 && M!=N && button_changed == 1) {
+		button_changed = 0;
 		N++;
-		M--;
-		button_state = gpio_12_val;
 	}
 
-#endif
-
-    hrtimer_forward(&blink_timer, ktime_get(), kt_but);
+    hrtimer_forward(&button_check_timer, ktime_get(), kt_but);
 
     return HRTIMER_RESTART;
 }
@@ -439,9 +433,6 @@ static enum hrtimer_restart button_check_timer_callback(struct hrtimer *param)
    flashes the LED */
 static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
 {
-#ifdef TEST
-
-	/* TODO: Add led on/off logic here */
 	static char power = 0x0;
 	power ^= 0x1;
     if (power) {
@@ -462,9 +453,6 @@ static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
     		ClearGpioPin(GPIO_19);
     	kt = ktime_set(TIMER_SEC, TIMER_NANO_SEC_LED_OFF);
     }
-
-#endif
-
     hrtimer_forward(&blink_timer, ktime_get(), kt);
 
     return HRTIMER_RESTART;
@@ -533,10 +521,10 @@ int gpio_driver_init(void)
     blink_timer.function = &blink_timer_callback;
     hrtimer_start(&blink_timer, kt, HRTIMER_MODE_REL);
 
-    /* hrtimer_init(&button_check_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    hrtimer_init(&button_check_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     kt_but = ktime_set(TIMER_SEC, TIMER_NANO_SEC_BUTTON_CHECK);
     button_check_timer.function = &button_check_timer_callback;
-    hrtimer_start(&button_check_timer, kt_but, HRTIMER_MODE_REL); */
+    hrtimer_start(&button_check_timer, kt_but, HRTIMER_MODE_REL);
 
     return 0;
 
@@ -567,6 +555,7 @@ void gpio_driver_exit(void)
 
     /* Release high resolution timer. */
     hrtimer_cancel(&blink_timer);
+	hrtimer_cancel(&button_check_timer);
 
     /* Clear GPIO pins. */
     ClearGpioPin(GPIO_06);
@@ -632,18 +621,32 @@ static int gpio_driver_release(struct inode *inode, struct file *filp)
  */
 static ssize_t gpio_driver_read(struct file *filp, char *buf, size_t len, loff_t *f_pos)
 {
-    /* Size of valid data in gpio_driver - data to send in user space. */
 	int data_size = 0;
-
-    /* TODO: fill gpio_driver_buffer here. */
+	int pom_N = N;
+	int digits_count = 0;
+	char output_string[7] = "";
 
     if (*f_pos == 0)
     {
-        /* Get size of valid data. */
-		data_size = strlen(gpio_driver_buffer);
+		while(pom_N) {
+			digits_count++;
+			pom_N /= 10;
+		}
+		pom_N = N;
+		data_size = digits_count;
+		while(pom_N) {
+			output_string[--digits_count] = (pom_N % 10) + '0';
+			pom_N /= 10;
+		}
+		if(N == 0) {
+			output_string[0] = '0';
+			output_string[1] = '\n';
+			data_size = 1;
+		} else
+			output_string[data_size] = '\n';
 
         /* Send data to user space. */
-        if (copy_to_user(buf, gpio_driver_buffer, data_size) != 0)
+        if (copy_to_user(buf, output_string, data_size) != 0)
         {
             return -EFAULT;
         }
@@ -720,6 +723,8 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
 				led_modes[2] = 2;
 			return len;
 		}
+		else if(gpio_driver_buffer[0] == 'C')
+			N = -1;
 
 		printk(KERN_INFO "%c %c", gpio_driver_buffer[0], gpio_driver_buffer[1]);
 		return len;
