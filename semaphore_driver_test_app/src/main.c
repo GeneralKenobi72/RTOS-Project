@@ -6,14 +6,17 @@
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
+#include <errno.h>
 
 #define BUF_LEN 2
-void semaphore_routine();
-void set_led(char color, char state);
+int semaphore_routine();
+int set_led(char color, char state);
 void INThandler(int);
 int msec = 0, triggers[5] = {4000, 2000, 2000, 9000, 1500};
 int ret_val;
+int sent_val;
 int file_desc;
+int M;
 
 int main(int argc, char* argv[]) {
 	signal(SIGINT, INThandler);
@@ -32,14 +35,31 @@ int main(int argc, char* argv[]) {
 		fflush(stdout);
 	}
 
+	/* Read M value of driver */
+	FILE *fp;
+	fp = fopen("/sys/module/semaphore_driver/parameters/M", "r");
+	if(!fp) {
+		printf("Error opening file: %s", strerror(errno));
+		fflush(stdout);
+		M=15;
+		exit(1);
+	} else {
+		if(fscanf(fp, "%d", &M) != 1)
+        	printf("Error reading file.\n");
+	}
+	fclose(fp);
 
-    /* Open device driver file(e.g. sem_driver). */
+	/* Clearing button presses */
     file_desc = open("/dev/sem_driver", O_RDWR);
     if(file_desc < 0)
     {
     	printf("Error, 'sem_driver' not opened\n");
     	return -1;
     }
+	char tmp[2] = "C";
+    ret_val = write(file_desc, tmp, BUF_LEN);
+	printf("Button was pressed 15 times");
+	close(file_desc);
 
 	while(1)
 		semaphore_routine();
@@ -52,32 +72,36 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void semaphore_routine() {
-	char string_from_file[7];
-	int M;
-	FILE *fp;
-	fp = fopen("/sys/module/semaphore_driver/M", "r");
-	if(fp == NULL) {
-		printf("Error opening file");
-		M=15;
-	}
-	if (fgets(string_from_file, 7, fp) != NULL) {
-        M = atoi(string_from_file);
-    } else {
-        printf("Error reading file.\n");
-    }
-
+int semaphore_routine() {
+	char string_from_file[20] = "";
 	clock_t before = clock();
 	set_led('G', '1');
 	set_led('R', '0');
 	set_led('Y', '0');
 	do {
-    	//ret_val = read(file_desc, string_from_file, BUF_LEN);
+    	file_desc = open("/dev/sem_driver", O_RDWR);
+    	if(file_desc < 0)
+    	{
+    		printf("Error, 'sem_driver' not opened\n");
+    		return -1;
+    	}
 
-		printf("M: %d", M);
+    	sent_val = read(file_desc, string_from_file, 10);
+
+		if((atoi(string_from_file)) == M) {
+			char tmp[2] = "C";
+    		ret_val = write(file_desc, tmp, BUF_LEN);
+			printf("Button was pressed 15 times");
+			close(file_desc);
+			break;
+		}
+
+		close(file_desc);
+			
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[0] );
+	memset(string_from_file, 0, sizeof(string_from_file));
 
 	set_led('G', '2');
 	set_led('R', '0');
@@ -118,16 +142,25 @@ void semaphore_routine() {
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[4] );
+	return 1;
 }
 
-void set_led(char color, char state) {
+int set_led(char color, char state) {
     char tmp[BUF_LEN];
 	
 	tmp[0] = color;
 	tmp[1] = state;
 
 	/* Write to sem_driver */
+    file_desc = open("/dev/sem_driver", O_RDWR);
+    if(file_desc < 0)
+    {
+    	printf("Error, 'sem_driver' not opened\n");
+    	return -1;
+    }
     ret_val = write(file_desc, tmp, BUF_LEN);
+	close(file_desc);
+	return 1;
 }
 
 /* Clear lights nad close file upon exiting app */
