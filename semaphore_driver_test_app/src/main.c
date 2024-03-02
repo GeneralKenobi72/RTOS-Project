@@ -44,12 +44,6 @@ int main(int argc, char* argv[]) {
 	while(1)
 		semaphore_routine();
 
-    /* /1* Read from dummy file. *1/ */
-    /* ret_val = read(file_desc, tmp, BUF_LEN); */
-
-    /* Close dummy file. */
-    close(file_desc);
-
 	/* Clear all lights */
 	set_led('G', '0');
 	set_led('Y', '0');
@@ -59,13 +53,28 @@ int main(int argc, char* argv[]) {
 }
 
 void semaphore_routine() {
+	char string_from_file[7];
+	int M;
+	FILE *fp;
+	fp = fopen("/sys/module/semaphore_driver/M", "r");
+	if(fp == NULL) {
+		printf("Error opening file");
+		M=15;
+	}
+	if (fgets(string_from_file, 7, fp) != NULL) {
+        M = atoi(string_from_file);
+    } else {
+        printf("Error reading file.\n");
+    }
+
 	clock_t before = clock();
 	set_led('G', '1');
 	set_led('R', '0');
 	set_led('Y', '0');
 	do {
-		/* TODO: Provjera da li je dugme pritisnuto M puta */
+    	//ret_val = read(file_desc, string_from_file, BUF_LEN);
 
+		printf("M: %d", M);
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[0] );
@@ -76,8 +85,6 @@ void semaphore_routine() {
 	before = clock();
 
 	do {
-		/* TODO: Provjera da li je dugme pritisnuto M puta */
-
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[1] );
@@ -88,8 +95,6 @@ void semaphore_routine() {
 	before = clock();
 
 	do {
-		/* TODO: Provjera da li je dugme pritisnuto M puta */
-
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[2] );
@@ -100,8 +105,6 @@ void semaphore_routine() {
 	before = clock();
 
 	do {
-		/* TODO: Provjera da li je dugme pritisnuto M puta */
-
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[3] );
@@ -112,8 +115,6 @@ void semaphore_routine() {
 	before = clock();
 
 	do {
-		/* TODO: Provjera da li je dugme pritisnuto M puta */
-
 		clock_t difference = clock() - before;
 	 	msec = difference * 1000 / CLOCKS_PER_SEC;
 	} while ( msec < triggers[4] );
@@ -129,11 +130,12 @@ void set_led(char color, char state) {
     ret_val = write(file_desc, tmp, BUF_LEN);
 }
 
-/* Clear lights upon exiting app */
+/* Clear lights nad close file upon exiting app */
 void INThandler(int sig) {
 	signal(sig, SIG_IGN);
 	set_led('G', '0');
 	set_led('R', '0');
 	set_led('Y', '0');
+    close(file_desc);
 	exit(0);
 }
