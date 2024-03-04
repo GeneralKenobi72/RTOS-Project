@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 		triggers[i-1] = atoi(argv[i]);
 	}
 	for(int i=0;i<5;i++) {
-		printf("%d ", triggers[i]);
+		printf("Ts%d:%ds\n", (i+1), triggers[i]/1000);
 		fflush(stdout);
 	}
 
@@ -48,17 +48,6 @@ int main(int argc, char* argv[]) {
         	printf("Error reading file.\n");
 	}
 	fclose(fp);
-
-	/* Clearing button presses */
-    file_desc = open("/dev/gpio_driver", O_RDWR);
-    if(file_desc < 0)
-    {
-    	printf("Error, 'gpio_driver' not opened\n");
-    	return -1;
-    }
-	char tmp[2] = "C";
-    ret_val = write(file_desc, tmp, BUF_LEN);
-	close(file_desc);
 
 	while(1)
 		semaphore_routine();
@@ -77,6 +66,18 @@ int semaphore_routine() {
 	set_led('G', '1');
 	set_led('R', '0');
 	set_led('Y', '0');
+
+	/* Clearing button presses */
+    file_desc = open("/dev/gpio_driver", O_RDWR);
+    if(file_desc < 0)
+    {
+    	printf("Error, 'gpio_driver' not opened\n");
+    	return -1;
+    }
+	char tmp[2] = "C";
+    ret_val = write(file_desc, tmp, BUF_LEN);
+	close(file_desc);
+
 	do {
     	file_desc = open("/dev/gpio_driver", O_RDWR);
     	if(file_desc < 0)
@@ -90,7 +91,7 @@ int semaphore_routine() {
 		if((atoi(string_from_file)) == M) {
 			char tmp[2] = "C";
     		ret_val = write(file_desc, tmp, BUF_LEN);
-			printf("Button was pressed 15 times");
+			printf("Button was pressed 15 times\n");
 			fflush(stdout);
 			close(file_desc);
 			break;
