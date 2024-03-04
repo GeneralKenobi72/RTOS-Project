@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 
 	/* Read M value of driver */
 	FILE *fp;
-	fp = fopen("/sys/module/semaphore_driver/parameters/M", "r");
+	fp = fopen("/sys/module/gpio_driver/parameters/M", "r");
 	if(!fp) {
 		printf("Error opening file: %s", strerror(errno));
 		fflush(stdout);
@@ -50,15 +50,14 @@ int main(int argc, char* argv[]) {
 	fclose(fp);
 
 	/* Clearing button presses */
-    file_desc = open("/dev/sem_driver", O_RDWR);
+    file_desc = open("/dev/gpio_driver", O_RDWR);
     if(file_desc < 0)
     {
-    	printf("Error, 'sem_driver' not opened\n");
+    	printf("Error, 'gpio_driver' not opened\n");
     	return -1;
     }
 	char tmp[2] = "C";
     ret_val = write(file_desc, tmp, BUF_LEN);
-	printf("Button was pressed 15 times");
 	close(file_desc);
 
 	while(1)
@@ -79,10 +78,10 @@ int semaphore_routine() {
 	set_led('R', '0');
 	set_led('Y', '0');
 	do {
-    	file_desc = open("/dev/sem_driver", O_RDWR);
+    	file_desc = open("/dev/gpio_driver", O_RDWR);
     	if(file_desc < 0)
     	{
-    		printf("Error, 'sem_driver' not opened\n");
+    		printf("Error, 'gpio_driver' not opened\n");
     		return -1;
     	}
 
@@ -92,6 +91,7 @@ int semaphore_routine() {
 			char tmp[2] = "C";
     		ret_val = write(file_desc, tmp, BUF_LEN);
 			printf("Button was pressed 15 times");
+			fflush(stdout);
 			close(file_desc);
 			break;
 		}
@@ -151,11 +151,11 @@ int set_led(char color, char state) {
 	tmp[0] = color;
 	tmp[1] = state;
 
-	/* Write to sem_driver */
-    file_desc = open("/dev/sem_driver", O_RDWR);
+	/* Write to gpio_driver */
+    file_desc = open("/dev/gpio_driver", O_RDWR);
     if(file_desc < 0)
     {
-    	printf("Error, 'sem_driver' not opened\n");
+    	printf("Error, 'gpio_driver' not opened\n");
     	return -1;
     }
     ret_val = write(file_desc, tmp, BUF_LEN);

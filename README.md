@@ -1,10 +1,10 @@
-# LEDs Example Driver for Raspberry Pi
+# Raspberry pi GPIO driver
 
-A collage project developed for the Real-Time Operating Systems class, this project contains a driver for LEDs and a test app utilizing the provided driver.
+A collage project developed for the Real-Time Operating Systems class. This project contains a driver for GPIO pins and a test app utilizing the provided driver.
 
 ## The Driver
 
-When a command is written, one of the three LEDs transitions to one of three states: on, off, or blinking.
+GPIO controls 3 output pins with LEDs, and one output pin with push-button. When a command is written, one of the three LEDs transitions to one of three states: on, off, or blinking.
 
 For example:
 
@@ -36,6 +36,6 @@ The user-space test app utilizes read and write commands, simulating a semaphore
 
 After 5th state, the sequence repeats.
 
-States change like this unless, during the green light on (1. state), the push-button is pressed M times. In that case, state automatically changes to green blinking state, and sequence continues normally. Button presses have no effect unless the green light is on.
+States change like this, unless during the green light is _on_ (1. state), the push-button is pressed M times. In that case, state automatically changes to green blinking state, and sequence continues normally. Button presses have no effect unless the green light is on.
 
-Test app accepts parameters(Ts1, ..., Ts5) during startup.
+Test app accepts parameters(Ts1, ... , Ts5) during startup.

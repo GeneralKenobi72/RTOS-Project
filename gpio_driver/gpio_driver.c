@@ -408,11 +408,10 @@ char GetGpioPinValue(char pin)
     return (tmp >> pin);
 }
 
-/* timer callback function called each time the timer expires
-   checks button sate */
+/* timer callback function called each time the
+   button timer expires, checks button sate */
 static enum hrtimer_restart button_check_timer_callback(struct hrtimer *param)
 {
-	/* TODO: Add button checker logic here */
 	static int button_changed = 0;
 	static char gpio_12_val;
 	gpio_12_val = GetGpioPinValue(GPIO_12);
@@ -429,8 +428,8 @@ static enum hrtimer_restart button_check_timer_callback(struct hrtimer *param)
     return HRTIMER_RESTART;
 }
 
-/* timer callback function called each time the timer expires
-   flashes the LED */
+/* timer callback function called each time the 
+   LED timer expires, flashes the LED */
 static enum hrtimer_restart blink_timer_callback(struct hrtimer *param)
 {
 	static char power = 0x0;
@@ -485,6 +484,7 @@ int gpio_driver_init(void)
     printk(KERN_INFO "gpio_driver major number is %d\n", gpio_driver_major);
 	printk(KERN_INFO "Led on time is: %d\n", T1);
 	printk(KERN_INFO "Led off time is: %d\n", T0);
+	printk(KERN_INFO "Maximum number of button presses is: %d\n", M);
 
     /* Allocating memory for the buffer. */
     gpio_driver_buffer = kmalloc(BUF_LEN, GFP_KERNEL);
@@ -515,12 +515,13 @@ int gpio_driver_init(void)
     SetInternalPullUpDown(GPIO_12, PULL_UP);
     SetGpioPinDirection(GPIO_12, GPIO_DIRECTION_IN);
 
-    /* Initialize high resolution timer. */
+    /* Initialize high resolution timer for LEDS. */
     hrtimer_init(&blink_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     kt = ktime_set(TIMER_SEC, TIMER_NANO_SEC_LED_ON);
     blink_timer.function = &blink_timer_callback;
     hrtimer_start(&blink_timer, kt, HRTIMER_MODE_REL);
 
+    /* Initialize high resolution timer for button. */
     hrtimer_init(&button_check_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     kt_but = ktime_set(TIMER_SEC, TIMER_NANO_SEC_BUTTON_CHECK);
     button_check_timer.function = &button_check_timer_callback;
@@ -561,17 +562,12 @@ void gpio_driver_exit(void)
     ClearGpioPin(GPIO_06);
     ClearGpioPin(GPIO_13);
     ClearGpioPin(GPIO_19);
-    ClearGpioPin(GPIO_26);
 
     /* Set GPIO pins as inputs and disable pull-ups. */
     SetGpioPinDirection(GPIO_06, GPIO_DIRECTION_IN);
     SetGpioPinDirection(GPIO_13, GPIO_DIRECTION_IN);
     SetGpioPinDirection(GPIO_19, GPIO_DIRECTION_IN);
-    SetGpioPinDirection(GPIO_26, GPIO_DIRECTION_IN);
     SetInternalPullUpDown(GPIO_12, PULL_NONE);
-    SetInternalPullUpDown(GPIO_16, PULL_NONE);
-    SetInternalPullUpDown(GPIO_20, PULL_NONE);
-    SetInternalPullUpDown(GPIO_21, PULL_NONE);
 
     /* Unmap GPIO Physical address space. */
     if (virt_gpio_base)
@@ -726,7 +722,6 @@ static ssize_t gpio_driver_write(struct file *filp, const char *buf, size_t len,
 		else if(gpio_driver_buffer[0] == 'C')
 			N = -1;
 
-		printk(KERN_INFO "%c %c", gpio_driver_buffer[0], gpio_driver_buffer[1]);
 		return len;
     }
 }

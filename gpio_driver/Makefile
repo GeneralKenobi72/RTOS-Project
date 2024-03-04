@@ -1,13 +1,13 @@
-TARGET := semaphore_driver.ko
+TARGET := gpio_driver.ko
 
-MDIR := arch/arm/semaphore_driver
+MDIR := arch/arm/gpio_driver
 
 CURRENT := $(shell uname -r)
 KDIR := /lib/modules/$(CURRENT)/build
 PWD := $(shell pwd)
 DEST := /lib/modules/$(CURRENT)/kernel/$(MDIR)
 
-obj-m := semaphore_driver.o
+obj-m := gpio_driver.o
 
 default:
 	$(MAKE) -I $(KDIR)/arch/arm/include/asm/ -C $(KDIR) M=$(PWD)
