@@ -4,7 +4,7 @@ A collage project developed for the Real-Time Operating Systems class. This proj
 
 ## The Driver
 
-GPIO controls 3 output pins with LEDs, and one output pin with push-button. When a command is written, one of the three LEDs transitions to one of three states: on, off, or blinking.
+GPIO controls 3 output pins with LEDs, and one input pin with push-button. When a command is written, one of the three LEDs transitions to one of three states: on, off, or blinking.
 
 For example:
 
